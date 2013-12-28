@@ -77,11 +77,16 @@ bool ProcessDebugger::AttachToProcess(DWORD processID)
 void ProcessDebugger::OnCreateProcessEvent(DWORD ProcessId)
 {
     qDebug() << "Created Process ID: " << ProcessId;
+
+    // Initialize the symbol engine ...
+    m_SymbolEngine.AddOptions( SYMOPT_DEBUG | SYMOPT_LOAD_LINES );
+    Q_EXPECT( m_SymbolEngine.Init(m_DebugProcessHandle) );
 }
 
 void ProcessDebugger::OnExitProcessEvent(DWORD ProcessId)
 {
     qDebug() << "Exit Process ID: " << ProcessId;
+    m_SymbolEngine.Close();
 }
 
 void ProcessDebugger::OnCreateThreadEvent(DWORD ThreadId)
@@ -101,6 +106,12 @@ void ProcessDebugger::OnLoadModuleEvent(LPVOID ImageBase, HANDLE hFile)
         return;
     }
 
+    if( ( hFile == NULL ) && ( hFile == INVALID_HANDLE_VALUE )  )
+    {
+        qDebug() << "Unable to load symbols for null file handle...";
+        return;
+    }
+
     // Get the module name from the file handle specified and add it to our list of module names
     std::wstring moduleName;
     if( !GetFileNameFromHandle(hFile, moduleName) )
@@ -109,49 +120,38 @@ void ProcessDebugger::OnLoadModuleEvent(LPVOID ImageBase, HANDLE hFile)
     }
     m_ModuleNames[ImageBase] = moduleName;
 
-    // Now we can populate the symbols from that module (which we'll need later when we try to access qmbam application)
-
-    // Obtain the module size and the address range occupied by the module
-
+    // We need to figure out how much space the module is using in memory before we load symbols for the module..
     DWORD moduleSize = 0;
-    if( !GetModuleSize( m_hProcess, ImageBase, moduleSize ) )
-    {
-        moduleSize = 0; // Just in case
-        _ASSERTE( !_T("GetModuleSize() failed.") );
-    }
-
+    GetModuleSize( m_DebugProcessHandle, ImageBase, moduleSize );
     LPVOID ImageEnd = (BYTE*)ImageBase + moduleSize;
+    qDebug() << "Module Loaded: " << moduleName.c_str() << " from: " << ImageBase << " to: " << ImageEnd;
 
-
-    // Report the event
-
-    _tprintf( _T("MODULE LOAD: %08p-%08p %s\n"), ImageBase, ImageEnd, ImageName.c_str() );
-
-
-    // Load symbols for the module
-
-    if( ( hFile != NULL ) && ( hFile != INVALID_HANDLE_VALUE )  )
+    // Now we can populate the symbols from that module (which we'll need later when we try to access qmbam application)
+    if( !m_SymbolEngine.LoadModuleSymbols( hFile, moduleName, (DWORD64)ImageBase, moduleSize ) )
     {
-        _tprintf( _T("  Loading symbols...\n") );
-
-        if( !m_SymbolEngine.LoadModuleSymbols( hFile, ImageName, (DWORD64)ImageBase, moduleSize ) )
-        {
-            _tprintf( _T("  Symbols cannot be loaded (error code: %u)\n"), m_SymbolEngine.LastError() );
-        }
-        else
-        {
-            ShowSymbolInfo( ImageBase );
-        }
-    }
-    else 
-    {
-        _tprintf( _T("  Symbols cannot be loaded (file handle is null).\n") );
+        Q_ASSERT_X( false, Q_FUNC_INFO, QString(ERR).arg(m_SymbolEngine.LastError()).toAscii() );        
     }
 }
 
 void ProcessDebugger::OnUnloadModuleEvent(LPVOID ImageBase)
 {
+    // Create a message for the module being unloaded and then erase it from the module list...
+    std::wstring moduleName( L"<unknown>" );
+    std::map<LPVOID, std::wstring>::iterator moduleIterator = m_ModuleNames.find( ImageBase );
+    if( moduleIterator != m_ModuleNames.end() )
+    {
+        moduleName = moduleIterator->second;
+    }
+    
+    qDebug() << "Unloading Module: " << moduleName.c_str();
 
+    if( moduleIterator != m_ModuleNames.end() )
+    {
+        m_ModuleNames.erase( moduleIterator );
+    }
+
+    // Unload the symbols for this module ...
+    m_SymbolEngine.UnloadModuleSymbols( (DWORD64)ImageBase );
 }
 
 void ProcessDebugger::OnExceptionEvent(DWORD ThreadId, const EXCEPTION_DEBUG_INFO& Info)
@@ -476,4 +476,47 @@ void ProcessDebugger::ReplaceDeviceNameWithDriveLetter( std::wstring& fileName )
       // Repeat until we've iterated through all of the drive letters.
     } while( *driveLetter );
 
+}
+
+bool ProcessDebugger::GetModuleSize(HANDLE hProcess, LPVOID imageBase, DWORD& moduleSize)
+{
+    bool moduleSizeFound = false;
+
+    if( hProcess == NULL )
+    {
+        return false;
+    }
+
+    if( imageBase == 0 )
+    {
+        return false;
+    }
+
+    // Scan the address space of the process and determine where the memory region 
+    // allocated for the module ends (that is, we are looking for the first range 
+    // of pages whose AllocationBase is not the same as the load address of the module)
+
+    MEMORY_BASIC_INFORMATION mbi;
+
+    BYTE* QueryAddress = (BYTE*)imageBase;
+
+    while( !moduleSizeFound )
+    {
+        if( VirtualQueryEx( hProcess, QueryAddress, &mbi, sizeof(mbi) ) != sizeof(mbi) )
+        {
+            break;
+        }
+
+        if( mbi.AllocationBase != imageBase )
+        {
+            // Found, calculate the module size
+            moduleSize = QueryAddress - (BYTE*)imageBase;
+            moduleSizeFound = true;
+            break;
+        }
+
+        QueryAddress += mbi.RegionSize;
+    }
+
+    return moduleSizeFound;
 }

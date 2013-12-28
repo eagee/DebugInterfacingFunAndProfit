@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IProcessDebugger.h"
+#include "SymbolEngine.h"
 
 class ProcessDebugger : IProcessDebugger
 {
@@ -10,9 +11,10 @@ private:
     std::wstring m_ProgramArgs;
     std::map<LPVOID, std::wstring> m_ModuleNames;
 
-    // Associations
+    // Associations    
     PROCESS_INFORMATION m_ProcessInfo;
     HANDLE m_DebugProcessHandle;
+    CSymbolEngine m_SymbolEngine;
 public:
 
     explicit ProcessDebugger(std::wstring program, std::wstring arguments) : m_ProgramName(program), m_ProgramArgs(arguments) { }
@@ -61,6 +63,7 @@ private:
 
     void ReplaceDeviceNameWithDriveLetter( std::wstring& fileName );
 
+    bool GetModuleSize( HANDLE hProcess, LPVOID imageBase, DWORD& moduleSize );
 
 };
 
