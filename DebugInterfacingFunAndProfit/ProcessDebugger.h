@@ -27,6 +27,8 @@ public:
 
     virtual bool ExecuteDebugLoop(DWORD timeout);
 
+    void ShowSymbolInfo( LPVOID ImageBase );
+
 private: 
 
     bool EnableDebugging();
@@ -52,6 +54,13 @@ private:
     void OnTimeout();
 
     bool HandleDebugEvent(DEBUG_EVENT &debugEvent, bool &initialBreakpointTriggered);
+
+    bool GetFileNameFromHandle( HANDLE hFile, std::wstring& fileName );
+
+    bool FileSizeIsValid(HANDLE hFile);
+
+    void ReplaceDeviceNameWithDriveLetter( std::wstring& fileName );
+
 
 };
 

@@ -7,7 +7,7 @@
 
 #include <comcat.h>
 #include <stddef.h>
-
+    
 #include <tchar.h>
 #include <limits.h>
 
@@ -28,4 +28,6 @@
 #include <atltransactionmanager.h>
 #include <dia2.h>
 #include <DbgHelp.h>
+#include <windows.h>
+#include <psapi.h>
 

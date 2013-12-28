@@ -96,7 +96,57 @@ void ProcessDebugger::OnExitThreadEvent(DWORD ThreadId)
 
 void ProcessDebugger::OnLoadModuleEvent(LPVOID ImageBase, HANDLE hFile)
 {
-    
+    if( m_DebugProcessHandle == NULL )
+    {
+        return;
+    }
+
+    // Get the module name from the file handle specified and add it to our list of module names
+    std::wstring moduleName;
+    if( !GetFileNameFromHandle(hFile, moduleName) )
+    {
+        moduleName = L"";
+    }
+    m_ModuleNames[ImageBase] = moduleName;
+
+    // Now we can populate the symbols from that module (which we'll need later when we try to access qmbam application)
+
+    // Obtain the module size and the address range occupied by the module
+
+    DWORD moduleSize = 0;
+    if( !GetModuleSize( m_hProcess, ImageBase, moduleSize ) )
+    {
+        moduleSize = 0; // Just in case
+        _ASSERTE( !_T("GetModuleSize() failed.") );
+    }
+
+    LPVOID ImageEnd = (BYTE*)ImageBase + moduleSize;
+
+
+    // Report the event
+
+    _tprintf( _T("MODULE LOAD: %08p-%08p %s\n"), ImageBase, ImageEnd, ImageName.c_str() );
+
+
+    // Load symbols for the module
+
+    if( ( hFile != NULL ) && ( hFile != INVALID_HANDLE_VALUE )  )
+    {
+        _tprintf( _T("  Loading symbols...\n") );
+
+        if( !m_SymbolEngine.LoadModuleSymbols( hFile, ImageName, (DWORD64)ImageBase, moduleSize ) )
+        {
+            _tprintf( _T("  Symbols cannot be loaded (error code: %u)\n"), m_SymbolEngine.LastError() );
+        }
+        else
+        {
+            ShowSymbolInfo( ImageBase );
+        }
+    }
+    else 
+    {
+        _tprintf( _T("  Symbols cannot be loaded (file handle is null).\n") );
+    }
 }
 
 void ProcessDebugger::OnUnloadModuleEvent(LPVOID ImageBase)
@@ -284,4 +334,146 @@ bool ProcessDebugger::ExecuteDebugLoop(DWORD timeout)
     }
 
     return true;
+}
+
+bool ProcessDebugger::GetFileNameFromHandle( HANDLE hFile, std::wstring& fileName )
+{
+    DWORD ErrCode = 0;
+
+    // Cleanup the [out] parameter
+    fileName = L"";
+    if( ( hFile == NULL ) || ( hFile == INVALID_HANDLE_VALUE ) )
+    {
+        return false;
+    }
+
+    if( !FileSizeIsValid(hFile) )
+    {
+        return false;
+    }
+
+    // Get the file name, map the file into memory, and handle any errors we might encounter...
+    HANDLE hMapFile     = NULL;
+    PVOID pViewOfFile   = NULL;
+
+    // Map the file into memory, return if we fail to do so...
+    hMapFile = CreateFileMapping( hFile, NULL, PAGE_READONLY, 0, 1, NULL );
+    if( hMapFile == NULL )
+    {
+        Q_ASSERT_X( false, Q_FUNC_INFO, QString(ERR).arg(GetLastError()).toAscii() );
+        return false;
+    }
+    
+    pViewOfFile = MapViewOfFile( hMapFile, FILE_MAP_READ, 0, 0, 1 );
+    if( pViewOfFile == NULL ) 
+    {
+        Q_ASSERT_X( false, Q_FUNC_INFO, QString(ERR).arg(GetLastError()).toAscii() );
+        return false;
+    }
+
+    // Obtain the file name and save it to our output string...
+    const DWORD BUFFER_SIZE = (MAX_PATH + 1);
+    WCHAR fileNameBuffer[BUFFER_SIZE] = {0};
+    if( !GetMappedFileName( GetCurrentProcess(), pViewOfFile, fileNameBuffer, BUFFER_SIZE) )
+    {
+        Q_ASSERT_X( false, Q_FUNC_INFO, QString(ERR).arg(GetLastError()).toAscii() );
+        return false;
+    }
+    fileName = fileNameBuffer;
+
+    // The file name returned by GetMappedFileName won't contain a drive letter, but a device name
+    // (logically of course b/c everything has to be a pain in windows), so we have to do some
+    // mojojojo to get the proper drive letter for the device.
+    ReplaceDeviceNameWithDriveLetter( fileName );
+
+    // Clean up our mapping and handle information
+    if( pViewOfFile != NULL )
+    {
+        Q_EXPECT( UnmapViewOfFile( pViewOfFile ) );
+    }
+
+    if( hMapFile != NULL ) 
+    {
+        Q_EXPECT( CloseHandle( hMapFile ) );
+    }
+
+    return true;
+
+}
+
+bool ProcessDebugger::FileSizeIsValid(HANDLE hFile)
+{
+    // Does the file have a non-zero size ? (b/c files with zero size can't be mapped)
+    DWORD FileSizeHi = 0;
+    DWORD FileSizeLo = 0;
+
+    // Get the file size and handle any failures callin that method (we can just return
+    // in that case since there won't be any file name info to obtain)
+    FileSizeLo = GetFileSize( hFile, &FileSizeHi );
+    if( (FileSizeLo == INVALID_FILE_SIZE) && (GetLastError() != NO_ERROR) ) 
+    {
+        Q_ASSERT_X( false, Q_FUNC_INFO, QString(ERR).arg(GetLastError()).toAscii() );
+        return false;
+    }
+    else if( ( FileSizeLo == 0 ) && ( FileSizeHi == 0 ) ) 
+    {
+        return false;
+    }
+    
+    return true;
+}
+
+
+void ProcessDebugger::ReplaceDeviceNameWithDriveLetter( std::wstring& fileName )
+{
+    DWORD ErrCode = 0;
+
+    if( fileName.length() == 0 )
+    {
+        return;
+    }
+
+    // Get the list of drive letters available on the syzytem
+    const DWORD BUFFER_SIZE = 512;
+    WCHAR driveNames[BUFFER_SIZE + 1] = {0};
+    DWORD driveStringLength = GetLogicalDriveStrings( BUFFER_SIZE, driveNames );
+    if( ( driveStringLength == 0 ) || ( driveStringLength > BUFFER_SIZE) )
+    {
+        Q_ASSERT_X( false, Q_FUNC_INFO, QString(ERR).arg(GetLastError()).toAscii() );
+        return;
+    }
+
+    // Walk through the list of characters in the drive name string. If one of the corresponds with 
+    // a device name specified in the string replace it with the drive letter specified...
+    WCHAR *driveLetter = driveNames;
+
+    do
+    {
+        WCHAR drive[3] = L" :";
+        _tcsncpy( drive, driveLetter, 2 );
+        WCHAR device[BUFFER_SIZE+1] = {0};
+        driveStringLength = QueryDosDevice( drive, device, BUFFER_SIZE );
+        if( ( driveStringLength == 0 ) || ( driveStringLength >= BUFFER_SIZE ) )
+        {
+            Q_ASSERT_X( false, Q_FUNC_INFO, QString(ERR).arg(GetLastError()).toAscii() );
+        }
+        else
+        {
+            // Is the device name the same as in the file name? If so then we can replace the device name with the drive letter!
+            size_t deviceNameLength = _tcslen( device );
+            if( _tcsnicmp( fileName.c_str(), device, deviceNameLength ) == 0 )
+            {
+                // Yes, it is -> Substitute it into the file name
+                WCHAR newFileName[BUFFER_SIZE+1] = {0};
+                _stprintf( newFileName, L"%s%s", drive, fileName.c_str()+deviceNameLength );
+                fileName = newFileName;
+                // the new file name has been populated, we can return now..
+                return;
+            }
+        }
+        while( *driveLetter++ );
+
+      // Repeat until we've iterated through all of the drive letters.
+    } while( *driveLetter );
+
 }

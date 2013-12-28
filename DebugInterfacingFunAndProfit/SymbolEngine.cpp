@@ -36,6 +36,8 @@
 //
 
 #pragma comment( lib, "dbghelp.lib" )
+#pragma comment( lib, "psapi.lib" )
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -289,7 +291,6 @@ bool CSymbolEngine::GetModuleInfo( DWORD64 Addr, IMAGEHLP_MODULE64& Info )
         m_LastError = ERROR_INVALID_FUNCTION;
         return false;
     }
-
 
     // Obtain module information
 
