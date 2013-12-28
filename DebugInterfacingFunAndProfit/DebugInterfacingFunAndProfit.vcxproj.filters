@@ -53,6 +53,12 @@
     <ClCompile Include="GeneratedFiles\qrc_DebugInterfacingFunAndProfit.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
+    <ClCompile Include="ProcessDebugger.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SymbolEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -60,6 +66,15 @@
     </ClInclude>
     <ClInclude Include="GeneratedFiles\ui_DebugInterfacingFunAndProfit.h">
       <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IProcessDebugger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ProcessDebugger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SymbolEngine.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
