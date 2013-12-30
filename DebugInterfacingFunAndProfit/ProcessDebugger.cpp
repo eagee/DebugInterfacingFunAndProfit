@@ -15,8 +15,8 @@ bool ProcessDebugger::StartAndAttachToProgram()
         shellExecuteInfo.fMask        = SEE_MASK_NOCLOSEPROCESS;
         shellExecuteInfo.hwnd         = NULL;               
         shellExecuteInfo.lpVerb       = L"open";
-        shellExecuteInfo.lpFile       = m_ProgramName.c_str();
-        shellExecuteInfo.lpParameters = m_ProgramArgs.c_str();
+        shellExecuteInfo.lpFile       = m_TargetProgramName.c_str();
+        shellExecuteInfo.lpParameters = m_TargetProgramArgs.c_str();
         shellExecuteInfo.lpDirectory  = NULL;
         shellExecuteInfo.nShow        = SW_SHOW;
         shellExecuteInfo.hInstApp     = NULL;
@@ -79,8 +79,9 @@ void ProcessDebugger::OnCreateProcessEvent(DWORD ProcessId)
     qDebug() << "Created Process ID: " << ProcessId;
 
     // Initialize the symbol engine ...
-    m_SymbolEngine.AddOptions( SYMOPT_DEBUG | SYMOPT_LOAD_LINES );
+    m_SymbolEngine.AddOptions( SYMOPT_DEBUG | SYMOPT_LOAD_LINES | SYMOPT_UNDNAME );
     Q_EXPECT( m_SymbolEngine.Init(m_DebugProcessHandle) );
+
 }
 
 void ProcessDebugger::OnExitProcessEvent(DWORD ProcessId)
@@ -97,6 +98,15 @@ void ProcessDebugger::OnCreateThreadEvent(DWORD ThreadId)
 void ProcessDebugger::OnExitThreadEvent(DWORD ThreadId)
 {
     qDebug() << "Exit Thread ID: " << ThreadId;
+}
+
+BOOL CALLBACK EnumSymProc( PSYMBOL_INFO pSymInfo, ULONG SymbolSize, PVOID UserContext)
+{
+    UNREFERENCED_PARAMETER(UserContext);
+
+    qDebug() << "Symbol Name: " << pSymInfo->Name << " Address: " << pSymInfo->Address;
+
+    return TRUE;
 }
 
 void ProcessDebugger::OnLoadModuleEvent(LPVOID ImageBase, HANDLE hFile)
@@ -124,12 +134,24 @@ void ProcessDebugger::OnLoadModuleEvent(LPVOID ImageBase, HANDLE hFile)
     DWORD moduleSize = 0;
     GetModuleSize( m_DebugProcessHandle, ImageBase, moduleSize );
     LPVOID ImageEnd = (BYTE*)ImageBase + moduleSize;
-    qDebug() << "Module Loaded: " << moduleName.c_str() << " from: " << ImageBase << " to: " << ImageEnd;
+    qDebug() << "Module Loaded: " << QString::fromStdWString(moduleName) << " from: " << ImageBase << " to: " << ImageEnd;
 
-    // Now we can populate the symbols from that module (which we'll need later when we try to access qmbam application)
-    if( !m_SymbolEngine.LoadModuleSymbols( hFile, moduleName, (DWORD64)ImageBase, moduleSize ) )
+    // We only want to load the symbols that are associated with our target executable or Qt...
+    if( (QString::fromStdWString(moduleName).contains("QtGui")) || ( moduleName == m_TargetProgramName) )
     {
-        Q_ASSERT_X( false, Q_FUNC_INFO, QString(ERR).arg(m_SymbolEngine.LastError()).toAscii() );        
+        // Now we can populate the symbols from that module (which we'll need later when we try to access qmbam application)
+        if( m_SymbolEngine.LoadModuleSymbols( hFile, moduleName, (DWORD64)ImageBase, moduleSize ) )
+        {
+            // Enumerate all of the symbols in our exe file ...
+            //char *Mask = "mb::ui*";
+            //SymEnumSymbols( m_DebugProcessHandle, (DWORD64)ImageBase, Mask, EnumSymProc, NULL );
+        }
+        else
+        {
+            Q_ASSERT_X( false, Q_FUNC_INFO, QString(ERR).arg(m_SymbolEngine.LastError()).toAscii() );        
+        }
+
+        
     }
 }
 
@@ -143,7 +165,7 @@ void ProcessDebugger::OnUnloadModuleEvent(LPVOID ImageBase)
         moduleName = moduleIterator->second;
     }
     
-    qDebug() << "Unloading Module: " << moduleName.c_str();
+    qDebug() << "Unloading Module: " << QString::fromStdWString(moduleName);
 
     if( moduleIterator != m_ModuleNames.end() )
     {
@@ -161,12 +183,33 @@ void ProcessDebugger::OnExceptionEvent(DWORD ThreadId, const EXCEPTION_DEBUG_INF
 
 void ProcessDebugger::OnDebugStringEvent(DWORD ThreadId, const OUTPUT_DEBUG_STRING_INFO& Info)
 {
-
+    qDebug() << "Debug string event...";
 }
 
 void ProcessDebugger::OnTimeout()
 {
-    qDebug() << "DebugLoop - Timeout!";
+    
+    // This code can be abstracted into a method that can be requested
+    // whenever a user wants to wait until qApp is available to work from...
+    DWORD64 qAppAddress = 0;
+    DWORD64 qAppDisplacement = 0;
+    std::wstring objectName = L"mb::ui::QMbamApplication::staticMetaObject"; 
+    //if( !m_SymbolEngine.FindSymbolByName( objectName, qAppAddress, qAppDisplacement ) )
+    //{
+    //qDebug() << "DebugLoop - Timeout!";
+
+    //Q_ASSERT_X( false, Q_FUNC_INFO, QString(ERR).arg(m_SymbolEngine.LastError()).toAscii() );
+    m_SymbolEngine.FindSymbolByName( objectName, qAppAddress, qAppDisplacement );
+    
+    QMetaObject *metaObject = (QMetaObject*)qAppAddress;
+
+    qDebug() << "Meta Name: " << metaObject->className() << " Properties: " << metaObject->propertyCount() << " Methods: " << metaObject->methodCount();
+    /*QApplication *appPointer = (QApplication*)qAppAddress;
+    qDebug() << "QApp Address: " << qAppAddress << " QApplication Displacement: " << qAppDisplacement << " Last Error: " << QString(ERR).arg(m_SymbolEngine.LastError()).toAscii();
+    qDebug() << "QApplication Name:" << appPointer->applicationName();
+    qDebug() << "Children:" << appPointer->children().size();
+    bool enabled = false;
+    */
 }
 
 bool ProcessDebugger::HandleDebugEvent(DEBUG_EVENT &debugEvent, bool &initialBreakpointTriggered)

@@ -21,7 +21,7 @@ bool DebugInterfacingFunAndProfit::TestDIA()
 
     bool success = processDebugger.StartAndAttachToProgram();
 
-    processDebugger.ExecuteDebugLoop( 30000 );
+    processDebugger.ExecuteDebugLoop( 10 );
 
     return success;
 };

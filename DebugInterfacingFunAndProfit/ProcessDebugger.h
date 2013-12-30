@@ -7,8 +7,8 @@ class ProcessDebugger : IProcessDebugger
 {
 private:
     // Attributes
-    std::wstring m_ProgramName;
-    std::wstring m_ProgramArgs;
+    std::wstring m_TargetProgramName;
+    std::wstring m_TargetProgramArgs;
     std::map<LPVOID, std::wstring> m_ModuleNames;
 
     // Associations    
@@ -17,13 +17,13 @@ private:
     CSymbolEngine m_SymbolEngine;
 public:
 
-    explicit ProcessDebugger(std::wstring program, std::wstring arguments) : m_ProgramName(program), m_ProgramArgs(arguments) { }
+    explicit ProcessDebugger(std::wstring program, std::wstring arguments) : m_TargetProgramName(program), m_TargetProgramArgs(arguments) { }
 
     ~ProcessDebugger() { }
 
-    virtual std::wstring ProgramArgs() const { return m_ProgramArgs; }
+    virtual std::wstring ProgramArgs() const { return m_TargetProgramArgs; }
 
-    virtual std::wstring ProgramName() const { return m_ProgramName; }
+    virtual std::wstring ProgramName() const { return m_TargetProgramName; }
 
     virtual bool StartAndAttachToProgram();
 

@@ -46,12 +46,12 @@
 
 // Wrapper for SYMBOL_INFO_PACKAGE structure 
 //
-struct CSymbolInfoPackage : public SYMBOL_INFO_PACKAGE 
+struct CSymbolInfoPackage : public SYMBOL_INFO_PACKAGEW 
 {
     CSymbolInfoPackage() 
     {
-        si.SizeOfStruct = sizeof(SYMBOL_INFO); 
-        si.MaxNameLen   = sizeof(name) / sizeof(TCHAR); 
+        si.SizeOfStruct = sizeof(SYMBOL_INFOW); 
+        si.MaxNameLen   = sizeof(name) / sizeof(WCHAR); 
     }
 };
 
@@ -100,7 +100,7 @@ bool CSymbolEngine::Init( HANDLE hProcess, std::wstring SearchPath, bool Invade,
 
     if( m_hProcess != NULL )
     {
-        _ASSERTE( !_T("Already initialized.") );
+        Q_ASSERT( !_T("Already initialized.") );
         if( hProcess != m_hProcess )
         {
             m_LastError = ERROR_INVALID_FUNCTION;
@@ -118,7 +118,7 @@ bool CSymbolEngine::Init( HANDLE hProcess, std::wstring SearchPath, bool Invade,
     if( !SymInitializeW( hProcess, SearchPath.c_str(), Invade ? TRUE : FALSE ) )
     {
         m_LastError = GetLastError();
-        _ASSERTE( !_T("SymInitialize failed.") );
+        Q_ASSERT( !_T("SymInitialize failed.") );
         return false;
     }
 
@@ -129,7 +129,7 @@ bool CSymbolEngine::Init( HANDLE hProcess, std::wstring SearchPath, bool Invade,
         if( !SymRegisterCallbackW64( hProcess, DebugInfoCallback, (ULONG64)this ) )
         {
             m_LastError = GetLastError();
-            _ASSERTE( !_T("SymInitialize failed.") );
+            Q_ASSERT( !_T("SymInitialize failed.") );
             return false;
         }
     }
@@ -150,7 +150,7 @@ void CSymbolEngine::Close()
         if( !SymCleanup( m_hProcess ) )
         {
             m_LastError = GetLastError();
-            _ASSERTE( !_T("SymCleanup failed.") );
+            Q_ASSERT( !_T("SymCleanup failed.") );
         }
 
         m_hProcess = NULL;
@@ -168,7 +168,7 @@ DWORD64 CSymbolEngine::LoadModuleSymbols( HANDLE hFile, const std::wstring& Imag
 
     if( m_hProcess == NULL )
     {
-        _ASSERTE( !_T("Symbol engine is not yet initialized.") );
+        Q_ASSERT( !_T("Symbol engine is not yet initialized.") );
         m_LastError = ERROR_INVALID_FUNCTION;
         return 0;
     }
@@ -186,7 +186,7 @@ DWORD64 CSymbolEngine::LoadModuleSymbols( HANDLE hFile, const std::wstring& Imag
         pImageName[BufSize] = 0;
         if( res == -1 )
         {
-            _ASSERTE( !_T("Module name has bad format.") );
+            Q_ASSERT( !_T("Module name has bad format.") );
             m_LastError = ERROR_INVALID_PARAMETER;
             return false;
         }
@@ -203,7 +203,7 @@ DWORD64 CSymbolEngine::LoadModuleSymbols( HANDLE hFile, const std::wstring& Imag
     if( rv == 0 )
     {
         m_LastError = GetLastError();
-        _ASSERTE( !_T("SymLoadModule64() failed.") );
+        Q_ASSERT( !_T("SymLoadModule64() failed.") );
         return 0;
     }
 
@@ -219,7 +219,7 @@ DWORD64 CSymbolEngine::LoadModuleSymbols( const std::wstring& ImageName, DWORD64
 
     if( ImageName.empty() )
     {
-        _ASSERTE( !_T("Empty module name.") );
+        Q_ASSERT( !_T("Empty module name.") );
         m_LastError = ERROR_INVALID_PARAMETER;
         return false;
     }
@@ -235,7 +235,7 @@ DWORD64 CSymbolEngine::LoadModuleSymbols( HANDLE hFile, DWORD64 ModBase, DWORD M
 
     if( ( hFile == NULL ) || ( hFile == INVALID_HANDLE_VALUE ) )
     {
-        _ASSERTE( !_T("Invalid file handle.") );
+        Q_ASSERT( !_T("Invalid file handle.") );
         m_LastError = ERROR_INVALID_PARAMETER;
         return false;
     }
@@ -253,14 +253,14 @@ bool CSymbolEngine::UnloadModuleSymbols( DWORD64 ModBase )
 
     if( m_hProcess == NULL )
     {
-        _ASSERTE( !_T("Symbol engine is not yet initialized.") );
+        Q_ASSERT( !_T("Symbol engine is not yet initialized.") );
         m_LastError = ERROR_INVALID_FUNCTION;
         return false;
     }
 
     if( ModBase == 0 )
     {
-        _ASSERTE( !_T("Module base address is null.") );
+        Q_ASSERT( !_T("Module base address is null.") );
         m_LastError = ERROR_INVALID_PARAMETER;
         return false;
     }
@@ -271,7 +271,7 @@ bool CSymbolEngine::UnloadModuleSymbols( DWORD64 ModBase )
     if( !SymUnloadModule64( m_hProcess, ModBase ) )
     {
         m_LastError = GetLastError();
-        _ASSERTE( !_T("SymUnloadModule64() failed.") );
+        Q_ASSERT( !_T("SymUnloadModule64() failed.") );
         return false;
     }
 
@@ -287,7 +287,7 @@ bool CSymbolEngine::GetModuleInfo( DWORD64 Addr, IMAGEHLP_MODULE64& Info )
 
     if( m_hProcess == NULL )
     {
-        _ASSERTE( !_T("Symbol engine is not yet initialized.") );
+        Q_ASSERT( !_T("Symbol engine is not yet initialized.") );
         m_LastError = ERROR_INVALID_FUNCTION;
         return false;
     }
@@ -301,7 +301,7 @@ bool CSymbolEngine::GetModuleInfo( DWORD64 Addr, IMAGEHLP_MODULE64& Info )
     if( !SymGetModuleInfo64( m_hProcess, Addr, &Info ) )
     {
         m_LastError = GetLastError();
-        _ASSERTE( !_T("SymGetModuleInfo64() failed.") );
+        Q_ASSERT( !_T("SymGetModuleInfo64() failed.") );
         return false;
     }
 
@@ -319,7 +319,7 @@ bool CSymbolEngine::FindSymbolByAddress( DWORD64 Address, std::wstring& Name, DW
 
     if( m_hProcess == NULL )
     {
-        _ASSERTE( !_T("Symbol engine is not yet initialized.") );
+        Q_ASSERT( !_T("Symbol engine is not yet initialized.") );
         m_LastError = ERROR_INVALID_FUNCTION;
         return false;
     }
@@ -332,7 +332,7 @@ bool CSymbolEngine::FindSymbolByAddress( DWORD64 Address, std::wstring& Name, DW
 
     DWORD64 Disp = 0; 
 
-    if( !SymFromAddr( m_hProcess, Address, &Disp, &sip.si ) )
+    if( !SymFromAddrW( m_hProcess, Address, &Disp, &sip.si ) )
     {
         // Failed, but do not assert here - it is usually normal when a symbol is not found
         m_LastError = GetLastError();
@@ -341,6 +341,38 @@ bool CSymbolEngine::FindSymbolByAddress( DWORD64 Address, std::wstring& Name, DW
     
     //Name          = sip.si.Name;
     Displacement  = Disp;
+
+    return true;
+
+}
+
+
+bool CSymbolEngine::FindSymbolByName( std::wstring& Name, DWORD64 &Address, DWORD64& Displacement )
+{
+    // Check preconditions 
+
+    if( m_hProcess == NULL )
+    {
+        Q_ASSERT( !_T("Symbol engine is not yet initialized.") );
+        m_LastError = ERROR_INVALID_FUNCTION;
+        return false;
+    }
+
+    // Look up the symbol
+
+    DWORD64 Disp = 0; 
+    CSymbolInfoPackage sip; 
+    
+    if( !SymFromNameW( m_hProcess, Name.c_str(), &sip.si ) )
+    {
+        // Failed, but do not assert here - it is usually normal when a symbol is not found
+        m_LastError = GetLastError();
+        return false;
+    }
+
+    //Name          = sip.si.Name;
+    Displacement  = Disp;
+    Address = sip.si.Address;
 
     return true;
 
@@ -390,7 +422,7 @@ BOOL CALLBACK DebugInfoCallback
 
     if( pEngine == 0 )
     {
-        _ASSERTE( !_T("Engine pointer is null.") );
+        Q_ASSERT( !_T("Engine pointer is null.") );
         return FALSE;
     }
 
@@ -398,9 +430,9 @@ BOOL CALLBACK DebugInfoCallback
     {
         if( CallbackData != 0 ) 
         {
-            _ASSERTE( !::IsBadStringPtr( (const TCHAR*)CallbackData, UINT_MAX ) ); 
+            Q_ASSERT( !::IsBadStringPtr( (const WCHAR*)CallbackData, UINT_MAX ) ); 
 
-            pEngine->OnEngineNotify( std::wstring( (const TCHAR*)CallbackData ) );
+            pEngine->OnEngineNotify( std::wstring( (const WCHAR*)CallbackData ) );
 
             return TRUE; 
         }
