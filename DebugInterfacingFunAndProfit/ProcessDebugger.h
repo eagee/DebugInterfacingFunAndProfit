@@ -13,8 +13,10 @@ private:
 
     // Associations    
     PROCESS_INFORMATION m_ProcessInfo;
-    HANDLE m_DebugProcessHandle;
+    HANDLE m_DebugeeProcessHandle;
+    HMODULE m_hKern32;
     CSymbolEngine m_SymbolEngine;
+    PVOID m_LoadLibraryAddress;
 public:
 
     explicit ProcessDebugger(std::wstring program, std::wstring arguments) : m_TargetProgramName(program), m_TargetProgramArgs(arguments) { }
@@ -29,13 +31,15 @@ public:
 
     virtual bool ExecuteDebugLoop(DWORD timeout);
 
-    void ShowSymbolInfo( LPVOID ImageBase );
-
 private: 
 
     bool EnableDebugging();
 
+    bool GetCorrectLoadLibraryAddress();
+
     bool AttachToProcess(DWORD processID );
+
+    bool InjectTestOMaticServerDll(std::wstring fullPathToDll);
 
     void OnCreateProcessEvent( DWORD ProcessId );
     

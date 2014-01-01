@@ -69,6 +69,7 @@ bool ProcessDebugger::EnableDebugging()
 
 bool ProcessDebugger::AttachToProcess(DWORD processID)
 {
+    Q_EXPECT( GetCorrectLoadLibraryAddress() );
     bool success = DebugActiveProcess( processID );
     Q_ASSERT_X( success, Q_FUNC_INFO, QString(ERR).arg(GetLastError()).toAscii() );
     return success;
@@ -80,7 +81,7 @@ void ProcessDebugger::OnCreateProcessEvent(DWORD ProcessId)
 
     // Initialize the symbol engine ...
     m_SymbolEngine.AddOptions( SYMOPT_DEBUG | SYMOPT_LOAD_LINES | SYMOPT_UNDNAME );
-    Q_EXPECT( m_SymbolEngine.Init(m_DebugProcessHandle) );
+    Q_EXPECT( m_SymbolEngine.Init(m_DebugeeProcessHandle) );
 
 }
 
@@ -111,7 +112,7 @@ BOOL CALLBACK EnumSymProc( PSYMBOL_INFO pSymInfo, ULONG SymbolSize, PVOID UserCo
 
 void ProcessDebugger::OnLoadModuleEvent(LPVOID ImageBase, HANDLE hFile)
 {
-    if( m_DebugProcessHandle == NULL )
+    if( m_DebugeeProcessHandle == NULL )
     {
         return;
     }
@@ -132,7 +133,7 @@ void ProcessDebugger::OnLoadModuleEvent(LPVOID ImageBase, HANDLE hFile)
 
     // We need to figure out how much space the module is using in memory before we load symbols for the module..
     DWORD moduleSize = 0;
-    GetModuleSize( m_DebugProcessHandle, ImageBase, moduleSize );
+    GetModuleSize( m_DebugeeProcessHandle, ImageBase, moduleSize );
     LPVOID ImageEnd = (BYTE*)ImageBase + moduleSize;
     qDebug() << "Module Loaded: " << QString::fromStdWString(moduleName) << " from: " << ImageBase << " to: " << ImageEnd;
 
@@ -200,16 +201,6 @@ void ProcessDebugger::OnTimeout()
 
     //Q_ASSERT_X( false, Q_FUNC_INFO, QString(ERR).arg(m_SymbolEngine.LastError()).toAscii() );
     m_SymbolEngine.FindSymbolByName( objectName, qAppAddress, qAppDisplacement );
-    
-    QMetaObject *metaObject = (QMetaObject*)qAppAddress;
-
-    qDebug() << "Meta Name: " << metaObject->className() << " Properties: " << metaObject->propertyCount() << " Methods: " << metaObject->methodCount();
-    /*QApplication *appPointer = (QApplication*)qAppAddress;
-    qDebug() << "QApp Address: " << qAppAddress << " QApplication Displacement: " << qAppDisplacement << " Last Error: " << QString(ERR).arg(m_SymbolEngine.LastError()).toAscii();
-    qDebug() << "QApplication Name:" << appPointer->applicationName();
-    qDebug() << "Children:" << appPointer->children().size();
-    bool enabled = false;
-    */
 }
 
 bool ProcessDebugger::HandleDebugEvent(DEBUG_EVENT &debugEvent, bool &initialBreakpointTriggered)
@@ -236,7 +227,7 @@ bool ProcessDebugger::HandleDebugEvent(DEBUG_EVENT &debugEvent, bool &initialBre
         //
         // 
         // Save the process handle
-        m_DebugProcessHandle = debugEvent.u.CreateProcessInfo.hProcess;
+        m_DebugeeProcessHandle = debugEvent.u.CreateProcessInfo.hProcess;
 
         OnCreateProcessEvent( debugEvent.dwProcessId );
         OnCreateThreadEvent( debugEvent.dwThreadId );
@@ -251,7 +242,7 @@ bool ProcessDebugger::HandleDebugEvent(DEBUG_EVENT &debugEvent, bool &initialBre
         OnExitProcessEvent( debugEvent.dwProcessId );
 
         // Reset the process handle (it will be closed at the next call to ContinueDebugEvent)
-        m_DebugProcessHandle = NULL;
+        m_DebugeeProcessHandle = NULL;
         keepDebugging = false;
         break;
 
@@ -328,6 +319,10 @@ bool ProcessDebugger::HandleDebugEvent(DEBUG_EVENT &debugEvent, bool &initialBre
             ContinueStatus = DBG_CONTINUE;
 
             initialBreakpointTriggered = true;
+
+            // Right here at our initial breakpoint is a great time to inject a dll! :D
+            InjectTestOMaticServerDll(L"WinTestOMaticServerd.dll");
+
         }
         break;
     }
@@ -562,4 +557,59 @@ bool ProcessDebugger::GetModuleSize(HANDLE hProcess, LPVOID imageBase, DWORD& mo
     }
 
     return moduleSizeFound;
+}
+
+bool ProcessDebugger::GetCorrectLoadLibraryAddress()
+{
+
+#ifndef _UNICODE
+    Q_ASSERT_X(false, Q_FUNC_INFO, "Non unicode builds aren't supported!!!");
+#endif
+
+    m_hKern32 = GetModuleHandle(TEXT("kernel32.dll"));
+    if( !m_hKern32 ) 
+    {
+        return false;
+    }
+
+    m_LoadLibraryAddress = (PVOID) GetProcAddress(m_hKern32, "LoadLibraryW");
+
+    if( !m_LoadLibraryAddress )
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool ProcessDebugger::InjectTestOMaticServerDll(std::wstring fullPathToDll)
+{
+    // Ok, in order to inject our dll the first thing we're going to need to do is allocate memory
+    // in our target process to the store the name of the dll we're loading...
+    size_t lengthInBytes = (fullPathToDll.length() * sizeof(wchar_t));
+    LPVOID targetBaseAddress = VirtualAllocEx( m_DebugeeProcessHandle, (LPVOID)0, lengthInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE );
+    if( targetBaseAddress == 0)
+    {
+        Q_ASSERT_X( false, Q_FUNC_INFO, QString(ERR).arg(GetLastError()).toAscii() );
+        return false;
+    }
+
+    // Then we write the actual string to the memory we just allocated
+    if( !WriteProcessMemory( m_DebugeeProcessHandle, targetBaseAddress, (LPCVOID)fullPathToDll.c_str(), lengthInBytes, 0) )
+    {
+        Q_ASSERT_X( false, Q_FUNC_INFO, QString(ERR).arg(GetLastError()).toAscii() );
+        return false;
+    }
+
+    // Now for the magic! We start a thread on the client that will use LoadModule to load our TestOMatic dll
+    // which in turn will (hopefully) start the TestOMatic IPC Server from within the target process! Yea man!
+    if(!CreateRemoteThread( m_DebugeeProcessHandle, 0, 0, (LPTHREAD_START_ROUTINE)m_LoadLibraryAddress, targetBaseAddress, 0, 0) )
+    {
+        Q_ASSERT_X( false, Q_FUNC_INFO, QString(ERR).arg(GetLastError()).toAscii() );
+        return false;
+    }
+
+    qDebug() << "Successfully created remote thread on debugee process!!!";
+
+    return true;
 }

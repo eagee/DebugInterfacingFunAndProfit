@@ -16,10 +16,14 @@ set( 	WinTestOMaticServer_SourceFiles
 		"${CMAKE_SOURCE_DIR}/src/dllmain.cpp" 
 		"${CMAKE_SOURCE_DIR}/src/stdafx.cpp" 
 		"${CMAKE_SOURCE_DIR}/src/WinTestOMaticServer.cpp" 
+		"${CMAKE_SOURCE_DIR}/src/LocalSocketIpcServer.cpp" 
+		"${CMAKE_SOURCE_DIR}/src/TestOMaticServer.cpp" 
 	)
 set( 	WinTestOMaticServer_HeaderFiles 		
 		"${CMAKE_SOURCE_DIR}/include/WinTestOMaticServer/stdafx.h"
-		"${CMAKE_SOURCE_DIR}/include/WinTestOMaticServer/targetver.h"		
+		"${CMAKE_SOURCE_DIR}/include/WinTestOMaticServer/targetver.h"
+		"${CMAKE_SOURCE_DIR}/include/WinTestOMaticServer/LocalSocketIpcServer.h"
+		"${CMAKE_SOURCE_DIR}/include/WinTestOMaticServer/TestOMaticServer.h"
 	)
 
 include( $ENV{CMAKE_SUPPORT_DIR}/Default.cmake )
