@@ -98,7 +98,7 @@ public:
     //   LastError() function can be used to obtain the last error code.
     //
     bool Init( HANDLE hProcess    = GetCurrentProcess(), 
-        std::wstring SearchPath  = NULL, 
+        std::wstring SearchPath  = L"", 
         bool   Invade      = false, 
         bool   Notify      = false );
 
@@ -201,6 +201,9 @@ public:
     //   LastError() function can be used to obtain the last error code.
     //
     bool FindSymbolByAddress( DWORD64 Address, std::wstring& Name, DWORD64& Displacement );
+
+    bool FindSymbolByName( std::wstring& Name, DWORD64 &Address, DWORD64& Displacement );
+
 
     // Option control operations (see SymGetOptions and SymSetOptions 
     // in DbgHelp documentation for more information and the list of available options)

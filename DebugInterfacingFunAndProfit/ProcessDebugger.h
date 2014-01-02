@@ -2,40 +2,47 @@
 
 #include "IProcessDebugger.h"
 #include "SymbolEngine.h"
+#include "LocalSocketIpcClient.h"
 
 class ProcessDebugger : IProcessDebugger
 {
 private:
     // Attributes
-    std::wstring m_ProgramName;
-    std::wstring m_ProgramArgs;
+    std::wstring m_TargetProgramName;
+    std::wstring m_TargetProgramArgs;
     std::map<LPVOID, std::wstring> m_ModuleNames;
 
     // Associations    
     PROCESS_INFORMATION m_ProcessInfo;
-    HANDLE m_DebugProcessHandle;
+    DWORD m_ProcessID;
+    HANDLE m_DebugeeProcessHandle;
+    HMODULE m_hKern32;
     CSymbolEngine m_SymbolEngine;
+    PVOID m_LoadLibraryAddress;
+    QScopedPointer<TestOMaticClient> m_IpcClient;
 public:
 
-    explicit ProcessDebugger(std::wstring program, std::wstring arguments) : m_ProgramName(program), m_ProgramArgs(arguments) { }
+    explicit ProcessDebugger(std::wstring program, std::wstring arguments);
 
     ~ProcessDebugger() { }
 
-    virtual std::wstring ProgramArgs() const { return m_ProgramArgs; }
+    virtual std::wstring ProgramArgs() const { return m_TargetProgramArgs; }
 
-    virtual std::wstring ProgramName() const { return m_ProgramName; }
+    virtual std::wstring ProgramName() const { return m_TargetProgramName; }
 
     virtual bool StartAndAttachToProgram();
 
     virtual bool ExecuteDebugLoop(DWORD timeout);
 
-    void ShowSymbolInfo( LPVOID ImageBase );
-
 private: 
 
     bool EnableDebugging();
 
+    bool GetCorrectLoadLibraryAddress();
+
     bool AttachToProcess(DWORD processID );
+
+    bool InjectTestOMaticServerDll(std::wstring fullPathToDll);
 
     void OnCreateProcessEvent( DWORD ProcessId );
     

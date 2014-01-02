@@ -1,4 +1,6 @@
 #include <QtGui>
+#include <QtCore>
+#include <QtNetwork>
 #include <atlbase.h>
 #include <atldef.h>
 #include <atlcore.h>
@@ -30,4 +32,5 @@
 #include <DbgHelp.h>
 #include <windows.h>
 #include <psapi.h>
+
 
