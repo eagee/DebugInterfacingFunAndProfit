@@ -2,6 +2,7 @@
 
 #include "IProcessDebugger.h"
 #include "SymbolEngine.h"
+#include "LocalSocketIpcClient.h"
 
 class ProcessDebugger : IProcessDebugger
 {
@@ -13,13 +14,15 @@ private:
 
     // Associations    
     PROCESS_INFORMATION m_ProcessInfo;
+    DWORD m_ProcessID;
     HANDLE m_DebugeeProcessHandle;
     HMODULE m_hKern32;
     CSymbolEngine m_SymbolEngine;
     PVOID m_LoadLibraryAddress;
+    QScopedPointer<TestOMaticClient> m_IpcClient;
 public:
 
-    explicit ProcessDebugger(std::wstring program, std::wstring arguments) : m_TargetProgramName(program), m_TargetProgramArgs(arguments) { }
+    explicit ProcessDebugger(std::wstring program, std::wstring arguments);
 
     ~ProcessDebugger() { }
 

@@ -26,7 +26,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
             // Save the handle to our dll in case we need it later ...
             g_hMod = (HWND)hModule;
             
-            
+            qDebug() << "WinTestOMatic: Attempting to start thread and move server to it...";
             // TODO: Launch yourself a QThread class that can manage IPC stuff ...
             g_Thread = new QThread( );
             g_Server = new TestOMaticServer( );
@@ -36,7 +36,8 @@ BOOL APIENTRY DllMain( HMODULE hModule,
             {
                 g_Thread->start();
             }
-            QMetaObject::invokeMethod( g_Server, "OnStartServer", Qt::QueuedConnection );
+            qDebug() << "WinTestOMatic: Attempting to start server on custom thread ...";
+            QMetaObject::invokeMethod( g_Server, "OnRunServer", Qt::QueuedConnection );
             break;
         case DLL_PROCESS_DETACH:
             //g_Server->deleteLater();

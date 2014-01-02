@@ -184,7 +184,81 @@ void ProcessDebugger::OnExceptionEvent(DWORD ThreadId, const EXCEPTION_DEBUG_INF
 
 void ProcessDebugger::OnDebugStringEvent(DWORD ThreadId, const OUTPUT_DEBUG_STRING_INFO& Info)
 {
-    qDebug() << "Debug string event...";
+    QString debugString = "";
+    // Check parameters and preconditions
+
+    if( m_DebugeeProcessHandle == NULL )
+    {
+        _ASSERTE( !_T("Debuggee process handle is NULL.") );
+        return;
+    }
+
+    if( ( Info.lpDebugStringData == 0 ) || ( Info.nDebugStringLength == 0 ) )
+    {
+        _ASSERTE( !_T("No debug string information.") );
+        return;
+    }
+
+
+    // Read the string from the debuggee's address space
+
+    if( Info.fUnicode ) 
+    {
+        // Read as Unicode string
+
+        const SIZE_T cMaxChars = 0xFFFF; 
+        WCHAR Buffer[cMaxChars+1] = {0};
+
+        SIZE_T CharsToRead = Info.nDebugStringLength; 
+
+        if( CharsToRead > cMaxChars ) 
+            CharsToRead = cMaxChars;
+
+        SIZE_T BytesRead = 0;
+
+        if( !ReadProcessMemory( m_DebugeeProcessHandle, Info.lpDebugStringData, Buffer, CharsToRead * sizeof(WCHAR), &BytesRead ) || ( BytesRead == 0 ) )
+        {
+            _tprintf( _T("ReadProcessMemory() failed. Error: %u\n"), GetLastError() );
+            _ASSERTE( !_T("ReadProcessMemory failed.") );
+            return;
+        }
+
+        debugString = QString::fromWCharArray(Buffer);
+    }
+    else 
+    {
+        // Read as ANSI string
+
+        const SIZE_T cMaxChars = 0xFFFF; 
+        CHAR Buffer[cMaxChars+1] = {0};
+
+        SIZE_T CharsToRead = Info.nDebugStringLength; 
+
+        if( CharsToRead > cMaxChars ) 
+            CharsToRead = cMaxChars;
+
+        SIZE_T BytesRead = 0;
+
+        if( !ReadProcessMemory( m_DebugeeProcessHandle, Info.lpDebugStringData, Buffer, CharsToRead * sizeof(CHAR), &BytesRead ) || ( BytesRead == 0 ) )
+        {
+            _tprintf( _T("ReadProcessMemory() failed. Error: %u\n"), GetLastError() );
+            _ASSERTE( !_T("ReadProcessMemory failed.") );
+            return;
+        }
+
+        debugString = QString::fromAscii(Buffer);
+    }
+
+    qDebug() << "Debug String Event: " + debugString;
+    if(debugString.contains("Server Active"))
+    {
+        // TODO: TURN THIS BAD BOY INTO A OBJECT, MOVE IT TO ANOTHER THREAD, AND SEND THIS BAD BOY OUT AS A SIGNAL FOR ANOTHER OBJECT TO CONSUME!!!
+        m_IpcClient->Connect();
+        Q_EXPECT( m_IpcClient->Connected() == true );
+        QStringList widgets = m_IpcClient->GetAllWidgets(10000);
+        qDebug() << "Total Widgets: " << widgets.size();
+    }
+    
 }
 
 void ProcessDebugger::OnTimeout()
@@ -612,4 +686,9 @@ bool ProcessDebugger::InjectTestOMaticServerDll(std::wstring fullPathToDll)
     qDebug() << "Successfully created remote thread on debugee process!!!";
 
     return true;
+}
+
+ProcessDebugger::ProcessDebugger(std::wstring program, std::wstring arguments) : m_TargetProgramName(program), m_TargetProgramArgs(arguments)
+{
+    m_IpcClient.reset(new TestOMaticClient("TestOMaticServer"));
 }
