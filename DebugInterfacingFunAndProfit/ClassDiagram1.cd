@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="IQProcessDebugger">
+    <Position X="3.75" Y="4" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAAQAAAAAIAAAAAAAAAAQEgAAAAAEA=</HashCode>
+      <FileName>IQProcessDebugger.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WinProcessDebugger">
+    <Position X="9.5" Y="0.5" Width="3" />
+    <TypeIdentifier>
+      <HashCode>AQAAgAAsIAgEIhAABgAAQAIAAAYAQAIAAQEhAKIAKFo=</HashCode>
+      <FileName>WinProcessDebugger.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DebugInterfacingFunAndProfit">
+    <Position X="0.5" Y="0.5" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAEAABAAAAAAAAAAAACAAAAAAAAAAAAAA=</HashCode>
+      <FileName>DebugInterfacingFunAndProfit.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="QProcessDebuggerFactory">
+    <Position X="3.75" Y="2.75" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>IAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>QProcessDebuggerFactory.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Struct Name="ProcessDebugger">
+    <Position X="3.75" Y="0.5" Width="2.75" />
+    <Compartments>
+      <Compartment Name="Nested Types" Collapsed="false" />
+    </Compartments>
+    <NestedTypes>
+      <Enum Name="ProcessDebugger::DebuggerType">
+        <TypeIdentifier>
+          <NewMemberFileName>IQProcessDebugger.h</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IQProcessDebugger.h</FileName>
+    </TypeIdentifier>
+  </Struct>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

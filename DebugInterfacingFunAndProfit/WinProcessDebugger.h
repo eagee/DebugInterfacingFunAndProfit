@@ -1,11 +1,13 @@
 #pragma once
 
-#include "IProcessDebugger.h"
+#include "IQProcessDebugger.h"
 #include "SymbolEngine.h"
-#include "LocalSocketIpcClient.h"
 
-class ProcessDebugger : IProcessDebugger
+class WinProcessDebugger : public QObject, public IQProcessDebugger
 {
+    Q_OBJECT
+    Q_INTERFACES( IQProcessDebugger )
+
 private:
     // Attributes
     std::wstring m_TargetProgramName;
@@ -19,20 +21,34 @@ private:
     HMODULE m_hKern32;
     CSymbolEngine m_SymbolEngine;
     PVOID m_LoadLibraryAddress;
-    QScopedPointer<TestOMaticClient> m_IpcClient;
+
 public:
 
-    explicit ProcessDebugger(std::wstring program, std::wstring arguments);
+    explicit WinProcessDebugger(QString program, QString arguments, QObject *parent);
 
-    ~ProcessDebugger() { }
+    ~WinProcessDebugger() { }
 
-    virtual std::wstring ProgramArgs() const { return m_TargetProgramArgs; }
+    virtual ProcessDebugger::DebuggerType Type() const { return ProcessDebugger::Windows; };
 
-    virtual std::wstring ProgramName() const { return m_TargetProgramName; }
+    virtual QString InjectionDllName() const;
 
-    virtual bool StartAndAttachToProgram();
+    virtual QString ProgramArgs() const { return QString::fromStdWString(m_TargetProgramArgs); }
 
-    virtual bool ExecuteDebugLoop(DWORD timeout);
+    virtual QString ProgramName() const { return QString::fromStdWString(m_TargetProgramName); }
+
+    virtual void MoveToThread(QThread *thread);
+
+    virtual bool ExecuteDebugLoop();
+
+    virtual QObject *GetQObject();
+
+public slots:
+
+    virtual void StartAndAttachToProgram();
+
+signals:
+
+    bool DebugProcessIsReadyForConnections();
 
 private: 
 
