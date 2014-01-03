@@ -32,5 +32,6 @@
 #include <DbgHelp.h>
 #include <windows.h>
 #include <psapi.h>
+#include "QtExpect.h"
 
 

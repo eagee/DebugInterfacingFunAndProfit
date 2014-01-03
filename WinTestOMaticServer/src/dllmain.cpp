@@ -40,7 +40,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
             QMetaObject::invokeMethod( g_Server, "OnRunServer", Qt::QueuedConnection );
             break;
         case DLL_PROCESS_DETACH:
-            //g_Server->deleteLater();
+            g_Server->deleteLater();
             g_Thread->deleteLater();
             break;
         break;
