@@ -52,7 +52,6 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <OutputFile>$(OutDir)\$(ProjectName).exe</OutputFile>
       <AdditionalLibraryDirectories>$(QTDIR)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>qtmaind.lib;F:\Qt\4.8.4\lib\qtmaind.lib;F:\Qt\4.8.4\lib\QtGuid4.lib;F:\Qt\4.8.4\lib\QtNetworkd4.lib;F:\Qt\4.8.4\lib\QtCored4.lib;C:\Program Files (x86)\Microsoft Visual Studio 10.0\DIA SDK\lib\diaguids.lib;C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Lib\psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>

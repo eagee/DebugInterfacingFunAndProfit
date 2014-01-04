@@ -1,3 +1,9 @@
+
+// The following is needed to use Unicode functions of DbgHelp in Unicode build
+#ifdef UNICODE
+#define DBGHELP_TRANSLATE_TCHAR
+#endif
+
 #include <QtGui>
 #include <QtCore>
 #include <QtNetwork>

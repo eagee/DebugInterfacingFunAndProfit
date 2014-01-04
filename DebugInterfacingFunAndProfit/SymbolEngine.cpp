@@ -14,11 +14,6 @@
 // Include files
 //
 
-// The following is needed to use Unicode functions of DbgHelp in Unicode build
-#ifdef UNICODE
-#define DBGHELP_TRANSLATE_TCHAR
-#endif
-
 #include "stdafx.h"
 #include <windows.h>
 #include <tchar.h>

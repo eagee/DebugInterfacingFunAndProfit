@@ -6,6 +6,7 @@ DebugInterfacingFunAndProfit::DebugInterfacingFunAndProfit(QWidget *parent, Qt::
     : QMainWindow(parent, flags), m_TestOMatic(nullptr)
 {
     m_Ui.setupUi(this);
+    m_Ui.progressBar->setVisible(false);
 }
 
 bool DebugInterfacingFunAndProfit::SelectAndAttachToProcess()
@@ -113,7 +114,8 @@ void DebugInterfacingFunAndProfit::UpdateUiForProcessing(QString message)
     m_Ui.statusBar->showMessage(message);
     m_Ui.listWidgets->setEnabled(false);
     m_Ui.tableProperties->setEnabled(false);
-    //m_Ui.progresBar->set
+    m_Ui.progressBar->setVisible(true);
+    m_Ui.progressBar->repaint();
     m_Ui.statusBar->repaint();
     m_Ui.listWidgets->repaint();
     m_Ui.tableProperties->repaint();
@@ -125,5 +127,6 @@ void DebugInterfacingFunAndProfit::UpdateUiForUserInteraction(QString message)
     m_Ui.statusBar->showMessage(message);
     m_Ui.listWidgets->setEnabled(true);
     m_Ui.tableProperties->setEnabled(true);
+    m_Ui.progressBar->setVisible(false);
 }
 

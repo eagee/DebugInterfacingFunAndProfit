@@ -98,12 +98,13 @@ QStringList TestOMaticClient::GetAllWidgetNames()
     {
         m_Socket->write("GetAllWidgets");
         m_Socket->waitForReadyRead();
-        while( m_Socket->waitForReadyRead(1000) )
+        while( m_Socket->waitForReadyRead(100) )
         {
             QByteArray bResponse = m_Socket->readLine();
             QString response( bResponse.data() );
             qDebug() << Q_FUNC_INFO << ": Test O Matic Response: " << response;
             returnValue.push_back(response);
+            QApplication::processEvents();
         }
     }
 
@@ -131,7 +132,7 @@ QMap<QString, WidgetPropertyData> TestOMaticClient::GetWidgetProperties(QString 
         qDebug() << Q_FUNC_INFO << " Writing: " << request;
         m_Socket->write(request.toStdString().c_str());
         m_Socket->waitForReadyRead();
-        while( m_Socket->waitForReadyRead(1000) )
+        while( m_Socket->waitForReadyRead(100) )
         {
             QByteArray bPropertyInfo = m_Socket->readLine();
             QStringList propertyInfo = QString(bPropertyInfo).split(",");
@@ -143,7 +144,7 @@ QMap<QString, WidgetPropertyData> TestOMaticClient::GetWidgetProperties(QString 
                 data.Value = QVariant(propertyInfo[PROPERTY_VALUE]);
                 returnValue.insert(propertyInfo[PROPERTY_NAME], data);
             }
-            
+            QApplication::processEvents();
         }
     }
 
