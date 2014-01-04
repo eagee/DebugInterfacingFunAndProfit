@@ -107,6 +107,7 @@ QStringList TestOMaticClient::GetAllWidgetNames()
         }
     }
 
+    qDebug() << Q_FUNC_INFO << "Sorting Widget Names...";
     returnValue.sort();
 
     emit WidgetNamesFound(returnValue);
@@ -122,7 +123,8 @@ QMap<QString, QVariant> TestOMaticClient::GetWidgetProperties(QString widgetName
 
     if( m_Socket->isWritable() )
     {
-        m_Socket->write("GetWidgetProperties," + widgetName);
+        QString request = "GetWidgetProperties," + widgetName;
+        m_Socket->write(request.toStdString().c_str());
         m_Socket->waitForReadyRead();
         while( m_Socket->waitForReadyRead(1000) )
         {
