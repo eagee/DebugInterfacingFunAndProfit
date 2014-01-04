@@ -36,7 +36,7 @@ public:
 
     virtual QStringList GetAllWidgetNames();
 
-    virtual QMap<QString, QVariant> GetWidgetProperties(QString widgetName);
+    virtual QMap<QString, WidgetPropertyData> GetWidgetProperties(QString widgetName);
 
     virtual bool WaitForWidget(QString widgetName);
 
@@ -59,7 +59,7 @@ signals:
 
     void WidgetNamesFound(QStringList allWidgets);
 
-    void WidgetProperties(QString widgetName, QMap<QString, QVariant> properties);
+    void WidgetProperties(QString widgetName, QMap<QString, WidgetPropertyData> properties);
 
 private slots:
 

@@ -115,27 +115,39 @@ QStringList TestOMaticClient::GetAllWidgetNames()
     return returnValue;
 }
 
-QMap<QString, QVariant> TestOMaticClient::GetWidgetProperties(QString widgetName)
+QMap<QString, WidgetPropertyData> TestOMaticClient::GetWidgetProperties(QString widgetName)
 {
-    QMap<QString, QVariant> returnValue;
+    const int PROPERTY_NAME = 0;
+    const int PROPERTY_TYPE = 1;
+    const int PROPERTY_VALUE = 2;
+    QMap<QString, WidgetPropertyData> returnValue;
+    //returnValue.setInsertInOrder(true);
 
     Q_ASSERT( m_Socket->isOpen() );
 
     if( m_Socket->isWritable() )
     {
         QString request = "GetWidgetProperties," + widgetName;
+        qDebug() << Q_FUNC_INFO << " Writing: " << request;
         m_Socket->write(request.toStdString().c_str());
         m_Socket->waitForReadyRead();
         while( m_Socket->waitForReadyRead(1000) )
         {
-            QByteArray bProperty = m_Socket->readLine();
-            QByteArray bValue = m_Socket->readLine();
-            QString property( bProperty );
-            QString value( bValue );
-            qDebug() << Q_FUNC_INFO << ": Test O Matic Response: " << property << "->" << value;
-            returnValue.insert(property, QVariant(value));
+            QByteArray bPropertyInfo = m_Socket->readLine();
+            QStringList propertyInfo = QString(bPropertyInfo).split(",");
+            if( propertyInfo.size() == 3 )
+            {
+                qDebug() << Q_FUNC_INFO << ": Test O Matic Response: " << propertyInfo[PROPERTY_NAME] << "->" << propertyInfo[PROPERTY_VALUE];
+                WidgetPropertyData data;
+                data.Type = propertyInfo[PROPERTY_TYPE];
+                data.Value = QVariant(propertyInfo[PROPERTY_VALUE]);
+                returnValue.insert(propertyInfo[PROPERTY_NAME], data);
+            }
+            
         }
     }
+
+    emit WidgetProperties(widgetName, returnValue);
     
     return returnValue;
 }

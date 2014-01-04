@@ -17,12 +17,11 @@ bool DebugInterfacingFunAndProfit::SelectAndAttachToProcess()
     if(targetExe.isEmpty() == false)
     {
         m_TestOMatic = new TestOMaticClient( targetExe, "", this );
-
-        m_Ui.statusBar->showMessage("Attempting to attach to executable... Please wait ...");
-        m_Ui.statusBar->repaint();
+        UpdateUiForProcessing("Attempting to attach to executable... Please wait ...");
         m_TestOMatic->StartAndAttachToProgram();
+        UpdateUiForUserInteraction("Done");
 
-        return RefreshWidgets();
+        return true;
     }
 
     return false;
@@ -58,7 +57,29 @@ void DebugInterfacingFunAndProfit::OnItemClicked(QListWidgetItem *item)
 {
     if( (m_TestOMatic != nullptr) && (m_TestOMatic->IsAttached()) )
     {
-        QMap<QString, QVariant> properties = m_TestOMatic->GetWidgetProperties( item->text() );
+        UpdateUiForProcessing("Obtaining Widget Properties...");
+        while (m_Ui.tableProperties->rowCount() > 0)
+        {
+            m_Ui.tableProperties->removeRow(0);
+        }        
+        QMap<QString, WidgetPropertyData> properties = m_TestOMatic->GetWidgetProperties( item->text() );
+        for(int index = 0; index < properties.size(); index++)
+        {
+            QString name = properties.keys()[index];
+            QString type = properties[name].Type;
+            QString value = properties[name].Value.toString();
+            
+            if( !name.isEmpty() && !type.isEmpty() && !value.isEmpty() )
+            {
+                int targetRow = m_Ui.tableProperties->rowCount();
+                m_Ui.tableProperties->insertRow(targetRow);
+                m_Ui.tableProperties->setItem(targetRow, 0, new QTableWidgetItem(name));
+                m_Ui.tableProperties->setItem(targetRow, 1, new QTableWidgetItem(type));
+                m_Ui.tableProperties->setItem(targetRow, 2, new QTableWidgetItem(value));
+            }
+        }
+        UpdateUiForUserInteraction("Done");
+        m_Ui.tableProperties->resizeColumnsToContents();
     }
     else
     {
@@ -70,15 +91,14 @@ bool DebugInterfacingFunAndProfit::RefreshWidgets()
 {
     if( (m_TestOMatic != nullptr) && (m_TestOMatic->IsAttached()) )
     {
-        m_Ui.statusBar->showMessage("Refreshing Widgets...");
-        m_Ui.statusBar->repaint();
         m_Ui.listWidgets->clear();
+        UpdateUiForProcessing("Refreshing widgets from server, please wait...");
         QStringList widgetNames = m_TestOMatic->GetAllWidgetNames();
         foreach(QString widget, widgetNames)
         {
             m_Ui.listWidgets->addItem(widget);
         }
-        m_Ui.statusBar->showMessage("Done");
+        UpdateUiForUserInteraction("Done");
         return true;
     }
     else
@@ -87,3 +107,23 @@ bool DebugInterfacingFunAndProfit::RefreshWidgets()
         return false;
     }
 }
+
+void DebugInterfacingFunAndProfit::UpdateUiForProcessing(QString message)
+{
+    m_Ui.statusBar->showMessage(message);
+    m_Ui.listWidgets->setEnabled(false);
+    m_Ui.tableProperties->setEnabled(false);
+    //m_Ui.progresBar->set
+    m_Ui.statusBar->repaint();
+    m_Ui.listWidgets->repaint();
+    m_Ui.tableProperties->repaint();
+}
+
+
+void DebugInterfacingFunAndProfit::UpdateUiForUserInteraction(QString message)
+{
+    m_Ui.statusBar->showMessage(message);
+    m_Ui.listWidgets->setEnabled(true);
+    m_Ui.tableProperties->setEnabled(true);
+}
+

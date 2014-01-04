@@ -253,7 +253,7 @@ void WinProcessDebugger::OnDebugStringEvent(DWORD ThreadId, const OUTPUT_DEBUG_S
         debugString = QString::fromAscii(Buffer);
     }
 
-    qDebug() << Q_FUNC_INFO <<  ": Debug String Event: " + debugString;
+    qDebug() << "Debug String Event: " + debugString;
     if(debugString.contains("Server Active"))
     {
         qDebug() << Q_FUNC_INFO << ": Server process is ready for connections!";
