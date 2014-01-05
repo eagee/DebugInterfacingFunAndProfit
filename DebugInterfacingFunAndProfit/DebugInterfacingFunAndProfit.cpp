@@ -7,6 +7,8 @@ DebugInterfacingFunAndProfit::DebugInterfacingFunAndProfit(QWidget *parent, Qt::
 {
     m_Ui.setupUi(this);
     m_Ui.progressBar->setVisible(false);
+    m_Ui.listWidgets->setContextMenuPolicy(Qt::CustomContextMenu);
+    Q_EXPECT( connect(m_Ui.listWidgets, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(ShowContextMenu(const QPoint&))) );
 }
 
 bool DebugInterfacingFunAndProfit::SelectAndAttachToProcess()
@@ -50,6 +52,18 @@ void DebugInterfacingFunAndProfit::OnMenuTriggered(QAction *action)
         if( (m_TestOMatic != nullptr) && (m_TestOMatic->IsAttached()) )
         {
             RefreshWidgets();
+        }
+    }
+    else if( action->objectName() == "actionWidget_from_Mouse_Click" )
+    {
+        if( (m_TestOMatic != nullptr) && (m_TestOMatic->IsAttached()) )
+        {
+            QString result = m_TestOMatic->GetNextWidgetNameClicked();
+            QList<QListWidgetItem*> items = m_Ui.listWidgets->findItems(result, Qt::MatchExactly);
+            if(items.count() > 0)
+            {
+                m_Ui.listWidgets->setCurrentItem(items[0], QItemSelectionModel::Select);
+            }
         }
     }
 }
@@ -128,5 +142,25 @@ void DebugInterfacingFunAndProfit::UpdateUiForUserInteraction(QString message)
     m_Ui.listWidgets->setEnabled(true);
     m_Ui.tableProperties->setEnabled(true);
     m_Ui.progressBar->setVisible(false);
+}
+
+void DebugInterfacingFunAndProfit::ShowContextMenu(const QPoint& pos)
+{
+    if(m_Ui.listWidgets->count() > 0)
+    {
+        // for most widgets
+        QPoint globalPos = m_Ui.listWidgets->mapToGlobal(pos);
+        // for QAbstractScrollArea and derived classes you would use:
+        // QPoint globalPos = myWidget->viewport()->mapToGlobal(pos);
+        QMenu myMenu;
+        myMenu.addAction("Copy");
+
+        QAction* selectedItem = myMenu.exec(globalPos);
+        if (selectedItem)
+        {
+            QClipboard *clipboard = QApplication::clipboard();
+            clipboard->setText(m_Ui.listWidgets->currentItem()->text());
+        }
+    }
 }
 

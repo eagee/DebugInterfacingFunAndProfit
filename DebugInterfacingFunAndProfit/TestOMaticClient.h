@@ -34,11 +34,13 @@ public:
 
     virtual QString GetWidgetNameAt(int x, int y);
 
+    virtual QString GetNextWidgetNameClicked();
+
     virtual QStringList GetAllWidgetNames();
 
     virtual QMap<QString, WidgetPropertyData> GetWidgetProperties(QString widgetName);
 
-    virtual bool WaitForWidget(QString widgetName);
+    virtual bool WaitForWidget(QString widgetName, qint64 msTimeout);
 
     virtual QVariant GetValueForProperty(QString widgetName, QString propertyName);
 

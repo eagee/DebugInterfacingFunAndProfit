@@ -46,7 +46,7 @@
        <enum>QFrame::StyledPanel</enum>
       </property>
       <property name="editTriggers">
-       <set>QAbstractItemView::NoEditTriggers</set>
+       <set>QAbstractItemView::AllEditTriggers</set>
       </property>
       <property name="dragDropOverwriteMode">
        <bool>false</bool>
@@ -110,8 +110,29 @@
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
+      <property name="editTriggers">
+       <set>QAbstractItemView::NoEditTriggers</set>
+      </property>
+      <property name="showDropIndicator" stdset="0">
+       <bool>false</bool>
+      </property>
       <property name="alternatingRowColors">
        <bool>true</bool>
+      </property>
+      <property name="selectionMode">
+       <enum>QAbstractItemView::SingleSelection</enum>
+      </property>
+      <property name="isWrapping" stdset="0">
+       <bool>false</bool>
+      </property>
+      <property name="wordWrap">
+       <bool>false</bool>
+      </property>
+      <property name="selectionRectVisible">
+       <bool>true</bool>
+      </property>
+      <property name="sortingEnabled">
+       <bool>false</bool>
       </property>
      </widget>
     </item>
@@ -154,8 +175,15 @@
     </property>
     <addaction name="actionRefresh_Widgets"/>
    </widget>
+   <widget class="QMenu" name="menuGet">
+    <property name="title">
+     <string>Get</string>
+    </property>
+    <addaction name="actionWidget_from_Mouse_Click"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuAction"/>
+   <addaction name="menuGet"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -174,6 +202,11 @@
   <action name="actionRefresh_Widgets">
    <property name="text">
     <string>Refresh Widgets</string>
+   </property>
+  </action>
+  <action name="actionWidget_from_Mouse_Click">
+   <property name="text">
+    <string>Widget from Mouse Click</string>
    </property>
   </action>
  </widget>
@@ -200,7 +233,7 @@
   </connection>
   <connection>
    <sender>listWidgets</sender>
-   <signal>itemClicked(QListWidgetItem*)</signal>
+   <signal>itemActivated(QListWidgetItem*)</signal>
    <receiver>DebugInterfacingFunAndProfitClass</receiver>
    <slot>OnItemClicked(QListWidgetItem*)</slot>
    <hints>

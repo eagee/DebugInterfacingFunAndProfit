@@ -26,10 +26,9 @@ public:
 public slots:
     void OnMenuTriggered(QAction *action);
     void OnItemClicked(QListWidgetItem *item);
-
     void UpdateUiForProcessing(QString message);
-
     void UpdateUiForUserInteraction(QString message);
+    void ShowContextMenu(const QPoint& pos);
 
 };
 

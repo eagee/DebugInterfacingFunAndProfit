@@ -10,10 +10,11 @@ class ITestOMaticClient
 {
 public:
     // Potential Operations
-    virtual QString GetWidgetNameAt(int x, int y) = 0;
     virtual QStringList GetAllWidgetNames() = 0;
+    virtual QString GetWidgetNameAt(int x, int y) = 0;
+    virtual QString GetNextWidgetNameClicked() = 0;
     virtual QMap<QString, WidgetPropertyData> GetWidgetProperties(QString widgetName) = 0;
-    virtual bool WaitForWidget(QString widgetName) = 0;
+    virtual bool WaitForWidget(QString widgetName, qint64 msTimeout) = 0;
     virtual QVariant GetValueForProperty(QString widgetName, QString propertyName) = 0;
     virtual bool IsAttached() = 0;
     virtual QObject *GetQObject() = 0;

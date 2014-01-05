@@ -89,6 +89,23 @@ QString TestOMaticClient::GetWidgetNameAt(int x, int y)
     return returnValue;
 }
 
+QString TestOMaticClient::GetNextWidgetNameClicked()
+{
+    QString returnValue;
+    Q_ASSERT( m_Socket->isOpen() );
+
+    if( m_Socket->isWritable() )
+    {
+        m_Socket->write("GetNextWidgetNameClicked");
+        m_Socket->waitForReadyRead();
+        QByteArray bResponse = m_Socket->readLine();
+        QString response( bResponse.data() );
+        //qDebug() << Q_FUNC_INFO << ": Test O Matic Response: " << response;
+         returnValue = response;
+    }
+    return returnValue;
+}
+
 QStringList TestOMaticClient::GetAllWidgetNames()
 {
     QStringList returnValue;
@@ -102,7 +119,7 @@ QStringList TestOMaticClient::GetAllWidgetNames()
         {
             QByteArray bResponse = m_Socket->readLine();
             QString response( bResponse.data() );
-            qDebug() << Q_FUNC_INFO << ": Test O Matic Response: " << response;
+            //qDebug() << Q_FUNC_INFO << ": Test O Matic Response: " << response;
             returnValue.push_back(response);
             QApplication::processEvents();
         }
@@ -138,7 +155,7 @@ QMap<QString, WidgetPropertyData> TestOMaticClient::GetWidgetProperties(QString 
             QStringList propertyInfo = QString(bPropertyInfo).split(",");
             if( propertyInfo.size() == 3 )
             {
-                qDebug() << Q_FUNC_INFO << ": Test O Matic Response: " << propertyInfo[PROPERTY_NAME] << "->" << propertyInfo[PROPERTY_VALUE];
+                //qDebug() << Q_FUNC_INFO << ": Test O Matic Response: " << propertyInfo[PROPERTY_NAME] << "->" << propertyInfo[PROPERTY_VALUE];
                 WidgetPropertyData data;
                 data.Type = propertyInfo[PROPERTY_TYPE];
                 data.Value = QVariant(propertyInfo[PROPERTY_VALUE]);
@@ -153,9 +170,24 @@ QMap<QString, WidgetPropertyData> TestOMaticClient::GetWidgetProperties(QString 
     return returnValue;
 }
 
-bool TestOMaticClient::WaitForWidget(QString widgetName)
+bool TestOMaticClient::WaitForWidget(QString widgetName, qint64 msTimeout)
 {
-    Q_ASSERT_X(false, Q_FUNC_INFO, "The method or operation is not implemented.");
+    bool keepWaiting = true;
+    QDateTime startingTime = QDateTime::currentDateTime();
+    
+    while(keepWaiting == true)
+    {
+        QStringList widgets = GetAllWidgetNames();
+        if( widgets.contains(widgetName) )
+        {
+            return true;
+        }        
+        if( startingTime.msecsTo(QDateTime::currentDateTime()) > msTimeout)
+        {
+            return false;
+        }
+    }
+
     return false;
 }
 
@@ -214,4 +246,5 @@ QObject * TestOMaticClient::GetQObject()
 {
     return this;
 }
+
 
