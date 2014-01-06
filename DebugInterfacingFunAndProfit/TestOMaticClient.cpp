@@ -2,6 +2,8 @@
 #include "TestOMaticClient.h"
 #include "QProcessDebuggerFactory.h"
 
+const QString delimiter = "~";
+
 TestOMaticClient::TestOMaticClient(QString program, QString arguments, QObject *parent /* = 0*/) : QObject(parent), m_ServerName("TestOMaticServer") 
 {
 
@@ -145,14 +147,14 @@ QMap<QString, WidgetPropertyData> TestOMaticClient::GetWidgetProperties(QString 
 
     if( m_Socket->isWritable() )
     {
-        QString request = "GetWidgetProperties," + widgetName;
+        QString request = "GetWidgetProperties" + delimiter + widgetName;
         qDebug() << Q_FUNC_INFO << " Writing: " << request;
         m_Socket->write(request.toStdString().c_str());
         m_Socket->waitForReadyRead();
         while( m_Socket->waitForReadyRead(100) )
         {
-            QByteArray bPropertyInfo = m_Socket->readLine();
-            QStringList propertyInfo = QString(bPropertyInfo).split(",");
+            QByteArray bPropertyInfo = m_Socket->readAll();
+            QStringList propertyInfo = QString(bPropertyInfo).split(delimiter);
             if( propertyInfo.size() == 3 )
             {
                 //qDebug() << Q_FUNC_INFO << ": Test O Matic Response: " << propertyInfo[PROPERTY_NAME] << "->" << propertyInfo[PROPERTY_VALUE];

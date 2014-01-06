@@ -82,6 +82,9 @@
        <property name="text">
         <string>Name</string>
        </property>
+       <property name="textAlignment">
+        <set>AlignLeft|AlignTop</set>
+       </property>
       </column>
       <column>
        <property name="text">
@@ -109,6 +112,12 @@
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>240</height>
+       </size>
       </property>
       <property name="editTriggers">
        <set>QAbstractItemView::NoEditTriggers</set>

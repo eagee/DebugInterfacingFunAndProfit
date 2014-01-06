@@ -64,6 +64,11 @@ void DebugInterfacingFunAndProfit::OnMenuTriggered(QAction *action)
             {
                 m_Ui.listWidgets->setCurrentItem(items[0], QItemSelectionModel::Select);
             }
+            else
+            {
+                QListWidgetItem *newItem = new QListWidgetItem(result, m_Ui.listWidgets);
+                m_Ui.listWidgets->setCurrentItem(newItem, QItemSelectionModel::Select);
+            }
         }
     }
 }
@@ -87,14 +92,23 @@ void DebugInterfacingFunAndProfit::OnItemClicked(QListWidgetItem *item)
             if( !name.isEmpty() && !type.isEmpty() && !value.isEmpty() )
             {
                 int targetRow = m_Ui.tableProperties->rowCount();
+                QTableWidgetItem *nameItem = new QTableWidgetItem(name);
+                nameItem->setTextAlignment(Qt::AlignTop);
+                QTableWidgetItem *typeItem = new QTableWidgetItem(type);
+                typeItem->setTextAlignment(Qt::AlignTop);
+                QTableWidgetItem *valueItem = new QTableWidgetItem(value);
+                valueItem->setTextAlignment(Qt::AlignTop);
+
                 m_Ui.tableProperties->insertRow(targetRow);
-                m_Ui.tableProperties->setItem(targetRow, 0, new QTableWidgetItem(name));
-                m_Ui.tableProperties->setItem(targetRow, 1, new QTableWidgetItem(type));
-                m_Ui.tableProperties->setItem(targetRow, 2, new QTableWidgetItem(value));
+                m_Ui.tableProperties->setItem(targetRow, 0, nameItem);
+                m_Ui.tableProperties->setItem(targetRow, 1, typeItem);
+                m_Ui.tableProperties->setItem(targetRow, 2, valueItem);
+                
             }
         }
         UpdateUiForUserInteraction("Done");
         m_Ui.tableProperties->resizeColumnsToContents();
+        m_Ui.tableProperties->resizeRowsToContents();
     }
     else
     {
