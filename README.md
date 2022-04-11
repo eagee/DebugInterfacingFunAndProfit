@@ -5,7 +5,9 @@ DebugInterfacingFunAndProfit was a quick utility I wrote for our testing team to
 
 More information can be found here:
 Footage of the actual (admittedly rather odd but fun) gameplay can be found here:
-[![Debug Interfacing for Fun and Profit](https://www.youtube.com/watch?v=lK0feM4RHdM/0.jpg)](https://www.youtube.com/watch?v=lK0feM4RHdM)
+
+
+[![Debug Interfacing for Fun and Profit](https://img.youtube.com/vi/lK0feM4RHdM/0.jpg)] (https://www.youtube.com/watch?v=lK0feM4RHdM)
 
 
 
